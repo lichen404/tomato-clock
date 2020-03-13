@@ -1,0 +1,5 @@
+<!--components/clock/clock.wxml-->
+<view class="clock" hover-class="active">
+  <text>{{text}}</text>
+  <image src="../../images/tomato.png"></image>
+</view>

@@ -1,0 +1,32 @@
+<!--pages/statistics/statistics.wxml-->
+<view class="container-wrapper">
+    <view class="header">
+        <view class="tomato">
+            <text>今日番茄数</text>
+                <text>{{tomatoNumber}}</text>
+
+        </view>
+        
+        <view class="minutes">
+            <text>今日专注分钟</text>
+            <text>0</text>
+        </view>
+    </view>
+    <view class="fanqie-echart">
+        <view class="title">
+            <text>最近一周完成</text>
+            <text>0个番茄</text>
+        </view>
+        <view class="echart_pannel">
+            <ec-canvas ec="{{ecLine}}"></ec-canvas>
+        </view>
+
+    </view>
+    <view class="minute-echart">
+           <view class="title">
+            <text>最近一周专注时间</text>
+            <text>0分钟</text>
+        </view>
+        <view class="content"></view>
+    </view>
+</view>
