@@ -1,6 +1,6 @@
 <view class="home-container">
   <scroll-view class="todoList" scroll-y="true">
-    <view class="item" wx:for="{{list}}" wx:for-index="index" wx:key="{{item.id}}"  wx:if="{{!item.completed}}" bindtap='destroyTodo' 
+    <view class="item" wx:for="{{list}}" wx:for-index="index" wx:key="id"  wx:if="{{!item.completed}}" bindtap='destroyTodo' 
     data-index="{{index}}" data-id="{{item.id}}">
       <view class="select {{item.completed && 'active'}}"></view>
       <text>{{item.description}}</text>
