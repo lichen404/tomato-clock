@@ -50,20 +50,7 @@
 }
 
 .echart_pannel {
-    height: 30vh;
-
-}
-
-.minute-echart {
-    margin-top: 10rpx;
-    background-color: #fff;
-}
-
-.minute-echart .title {
-    display: flex;
-    justify-content: space-between;
-    margin: 20rpx 10rpx;
-    padding: 20rpx 10rpx;
-    border-bottom: #F6F6F6 2px solid;
+    height: 50vh;
+    width: 100%;
 
 }

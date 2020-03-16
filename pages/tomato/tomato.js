@@ -6,7 +6,7 @@ Page({
 
   timer: null,
   data: {
-    defaultSecond: 5,
+    defaultSecond: 120,
     time: "",
     timerStatus: 'stop',
     confirmVisible: false,

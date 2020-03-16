@@ -3,6 +3,8 @@ import * as echarts from '../../ec-canvas/echarts';
 const {
   http
 } = require('../../lib/http.js')
+
+let chart = null;
 Page({
 
 
@@ -10,54 +12,214 @@ Page({
    * 页面的初始数据
    */
   data: {
-    ecLine: {
-      onInit: function (canvas, width, height) {
-        //初始化echarts元素，绑定到全局变量，方便更改数据
-        const chartLine = echarts.init(canvas, null, {
-          width: width,
-          height: height
-        });
-        canvas.setChart(chartLine);
+    ec: {
+      lazyLoad: true
 
-        //可以先不setOption，等数据加载好后赋值，
-        //不过那样没setOption前，echats元素是一片空白，体验不好，所有我先set。
-        var xData = [1, 2, 3, 4, 5]; // x轴数据 自己写
-        var option = getOption(xData);
-        chartLine.setOption(option);
-      }
     },
+    ecComponent: '',
     tomatoList: {},
-    tomatoNumber: null
+    tomatoNumber: null,
+    time: null,
+    tomatoThisWeekNumber: null,
+    nameList: [],
+    valueList: []
   },
-  fetchTomatoes() {
+  initChart() {
+    this.ecComponent.init((canvas, width, height) => {
+      let chart = echarts.init(canvas, null, {
+        width: width,
+        height: height,
+
+      });
+      this.setOption(chart);
+      canvas.setChart(chart);
+      return chart;
+    })
+
+  },
+  renderChart() {
+    http.get('/tomatoes', {
+
+    }).then((response) => {
+      let rawMonthList = [...new Set(response.data.resources.map(item => item.started_at.split('T')[0]))]
+      let monthList = [...new Set(response.data.resources.map(item => item.started_at.split('T')[0].substring(5, 10).replace('-', '')))]
+      let result = {}
+      let valueList = []
+      let nameList = []
+      let dates = getDates()
+      for (let i in rawMonthList) {
+        result[monthList[i]] = response.data.resources.filter(item => item.started_at.indexOf(rawMonthList[i]) >= 0 && !item.aborted)
+      }
+
+      for (let date of dates) {
+
+        let month = date.split('/')[1]
+        let day = date.split('/')[2]
+        if (month.length === 1) {
+          month = '0' + month
+        }
+        if (day.length === 1) {
+          day = '0' + day
+        }
+        let key = month + day
+        if (result[key]) {
+          valueList.push(result[key].length)
+          nameList.push(date.split('/')[1] + '-' + date.split('/')[2])
+          this.setData({
+            valueList
+          })
+          this.setData({
+            nameList
+          })
+        }
+
+      }
+      this.setData({
+        tomatoThisWeekNumber: valueList.reduce((sum, value) => sum + value, 0)
+      })
+
+      this.initChart()
+
+    })
+  },
+  setOption(chart) {
+    let bar = {
+      grid: {
+        x: 15,
+        y: 40,
+        x2: 20,
+        y2: 30,
+        borderWidth: 1
+      },
+
+      xAxis: {
+
+        type: 'category',
+        data: this.data.nameList,
+        splitLine: {
+          show: true,
+          lineStyle: {
+            color: ['#F5F4F9'],
+          }
+        },
+
+        axisLine: { //坐标线
+
+          lineStyle: {
+            type: 'solid',
+            color: '#F5F4F9', //轴线的颜色
+            width: '1', //坐标线的宽度
+          }
+        },
+        axisTick: { //刻度
+
+          show: false //不显示刻度线
+        },
+        axisLabel: {
+          interval: 0,
+          textStyle: {
+            color: '#000', //坐标值的具体的颜色
+            fontSize: 8,
+          }
+        },
+
+      },
+      yAxis: {
+        splitLine: {
+          show: false
+        },
+        axisLine: { //线
+          show: false
+        },
+        axisTick: { //刻度
+          show: false
+        },
+        axisLabel: {
+          show: false
+        },
+      },
+      series: [{
+        type: "bar",
+        data: this.data.valueList,
+
+
+        itemStyle: {
+          normal: {
+            barBorderRadius: [20, 10, 0, 0],
+            color: '#FD6B71', //设置柱子颜色
+            label: {
+              show: true, //柱子上显示值
+              position: 'top', //值在柱子上方显示
+              textStyle: {
+                color: '#FD6B71', //值得颜色
+
+              }
+            }
+          }
+        },
+        barWidth: 10 //设置柱子宽度，单位为px
+      }],
+    }
+    chart.setOption(bar);
+  },
+  initData() {
+
     http.get('/tomatoes', {
 
     }).then(response => {
       let rawMonthList = [...new Set(response.data.resources.map(item => item.started_at.split('T')[0]))]
       let monthList = [...new Set(response.data.resources.map(item => item.started_at.split('T')[0].substring(5, 10).replace('-', '')))]
       let result = {}
+
       for (let i in rawMonthList) {
-        result[monthList[i]] = response.data.resources.filter(item => item.started_at.indexOf(rawMonthList[i]) >= 0)
+        result[monthList[i]] = response.data.resources.filter(item => item.started_at.indexOf(rawMonthList[i]) >= 0 && !item.aborted)
       }
+
       this.setData({
         tomatoList: result
       })
+      if (result[this.today()]) {
+        this.setData({
+          tomatoNumber: result[this.today()].length
+        })
+        this.setData({
+          time: this.computeTime(result[this.today()])
+        })
+      }
+
+
+
     });
 
+
   },
+
   today() {
     return (new Date().toISOString().split('T')[0].substring(5, 10).replace('-', ''))
+  },
+  day(string) {
+    return (new Date(string).toISOString().split('T')[0].substring(5, 10).replace('-', ''))
+  },
+  computeTime(todayList) {
+    const timeList = todayList.map(item => parseInt((new Date(item.ended_at).getTime() - new Date(item.created_at).getTime()) / (1000 * 60)) + 1)
+    //有误差，parseInt后被截断，所以+1
+    return timeList.reduce((x, y) => x + y)
   },
 
   /**
    * 生命周期函数--监听页面加载
    */
-  onLoad: function (options) {},
+  onLoad: function (options) {
+    this.ecComponent = this.selectComponent('#mychart-bar');
+    this.renderChart()
+  },
 
   /**
    * 生命周期函数--监听页面初次渲染完成
    */
   onReady: function () {
+
+
 
   },
 
@@ -66,19 +228,19 @@ Page({
    */
   onShow: function () {
 
-    console.log(this.today())
-    console.log(this.data.tomatoList)
+    this.initData()
 
-    this.setData({
-      tomatoNumber: this.data.tomatoList[this.today()].length
-    })
+
+
+
+
   },
 
   /**
    * 生命周期函数--监听页面隐藏
    */
   onHide: function () {
-    console.log(this.data.tomatoList)
+
   },
 
   /**
@@ -108,73 +270,17 @@ Page({
   onShareAppMessage: function () {
 
   }
+
 })
 
-function getOption(xData, data_cur, data_his) {
-  var option = {
-    backgroundColor: "#f5f4f3",
-    color: ["#37A2DA", "#f2960d", "#67E0E3", "#9FE6B8"],
-    title: {
-      text: '实时运行速度',
-      textStyle: {
-        fontWeight: '500',
-        fontSize: 15,
-        color: '#000'
-      },
-      x: 'center',
-      y: '0'
-    },
-    legend: {
-      data: ['今日', '昨日'],
-      right: 10
-    },
-    grid: {
-      top: '15%',
-      left: '1%',
-      right: '3%',
-      bottom: '60rpx',
-      containLabel: true
-    },
-    tooltip: {
-      show: true,
-      trigger: 'axis'
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: xData || [],
-      axisLabel: {
-        interval: 11,
-        formatter: function (value, index) {
-          return value.substring(0, 2) * 1;
-        },
-        textStyle: {
-          fontsize: '10px'
-        }
-      }
-    },
-    yAxis: {
-      x: 'center',
-      name: 'km/h',
-      type: 'value',
-      min: 0,
-      max: 120
-    },
-    series: [{
-      name: '今日',
-      zIndex: 2,
-      type: 'line',
-      smooth: true,
-      symbolSize: 0,
-      data: data_cur || []
-    }, {
-      name: '昨日',
-      zIndex: 1,
-      type: 'line',
-      smooth: true,
-      symbolSize: 0,
-      data: data_his || []
-    }]
-  };
-  return option;
+
+function getDates() {
+  var new_Date = new Date()
+  var timesStamp = new_Date.getTime();
+  var currenDay = new_Date.getDay();
+  var dates = [];
+  for (var i = 0; i < 7; i++) {
+    dates.push(new Date(timesStamp + 24 * 60 * 60 * 1000 * (i - (currenDay + 6) % 7)).toLocaleDateString().replace(/[年月]/g, '-').replace(/[日上下午]/g, ''));
+  }
+  return dates
 }

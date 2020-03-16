@@ -3,30 +3,24 @@
     <view class="header">
         <view class="tomato">
             <text>今日番茄数</text>
-                <text>{{tomatoNumber}}</text>
+                <text>{{tomatoNumber||'0'}}</text>
 
         </view>
         
         <view class="minutes">
             <text>今日专注分钟</text>
-            <text>0</text>
+            <text>{{time||'0'}}</text>
         </view>
     </view>
     <view class="fanqie-echart">
         <view class="title">
-            <text>最近一周完成</text>
-            <text>0个番茄</text>
+            <text>本周完成</text>
+            <text>{{tomatoThisWeekNumber}}个番茄</text>
         </view>
         <view class="echart_pannel">
-            <ec-canvas ec="{{ecLine}}"></ec-canvas>
+            <ec-canvas ec="{{ec}}" canvas-id="mychart-bar" id="mychart-bar"></ec-canvas>
         </view>
 
     </view>
-    <view class="minute-echart">
-           <view class="title">
-            <text>最近一周专注时间</text>
-            <text>0分钟</text>
-        </view>
-        <view class="content"></view>
-    </view>
+
 </view>
